@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -17,6 +15,9 @@ namespace OnlineFPS
         public float HitSparksLifetime = 1f;
         [ColorUsage(false, true)] public Color HitSparksColor = Color.red;
 
+        [Header("To avoid bullet travel")]
+        public bool InstantHit = false;
+
         public class Baker : Baker<BulletShotVisualsAuthoring>
         {
             public override void Bake(BulletShotVisualsAuthoring authoring)
@@ -31,6 +32,7 @@ namespace OnlineFPS
                     HitSparksSize = authoring.HitSparksSize,
                     HitSparksSpeed = authoring.HitSparksSpeed,
                     HitSparksLifetime = authoring.HitSparksLifetime,
+                    InstantHit = authoring.InstantHit,
                 });
             }
         }

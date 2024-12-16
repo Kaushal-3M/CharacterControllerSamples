@@ -121,6 +121,8 @@ MonoBehaviour:
   FiringRate: 1.5
   SpreadDegrees: 0
   ProjectilesPerShot: 1
+  BulletCount: 10
+  ReloadTimeDuration: 5
   VisualFeedback:
     WeaponBobHAmount: 0.08
     WeaponBobVAmount: 0.06

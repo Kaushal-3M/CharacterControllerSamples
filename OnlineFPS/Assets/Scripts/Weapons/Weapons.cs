@@ -19,6 +19,14 @@ namespace OnlineFPS
         [GhostField()] public bool IsFiring;
         [GhostField()] public uint TotalShotsCount;
         [GhostField()] public uint TotalProjectilesCount;
+        [GhostField()] public uint PrevTotalShotsCount;
+        [GhostField()] public bool IsReloading;
+
+        // New variables for reload
+        public uint BulletCount;
+        public float ReloadTimeDuration;
+        public float ReloadTimer;
+        public uint CurrentBulletCount; // Track remaining bullets before reload
 
         // Local data
         public byte LastVisualTotalShotsCountInitialized;

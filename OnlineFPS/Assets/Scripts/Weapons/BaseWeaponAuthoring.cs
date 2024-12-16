@@ -11,6 +11,8 @@ namespace OnlineFPS
         public float FiringRate;
         public float SpreadDegrees;
         public int ProjectilesPerShot;
+        public int BulletCount;
+        public float ReloadTimeDuration;
         public WeaponVisualFeedback.Authoring VisualFeedback = WeaponVisualFeedback.Authoring.GetDefault();
 
         class Baker : Baker<BaseWeaponAuthoring>
@@ -25,6 +27,9 @@ namespace OnlineFPS
                     FiringRate = authoring.FiringRate,
                     SpreadRadians = math.radians(authoring.SpreadDegrees),
                     ProjectilesPerShot = authoring.ProjectilesPerShot,
+                    BulletCount = (uint)authoring.BulletCount,
+                    ReloadTimeDuration = authoring.ReloadTimeDuration,
+                    CurrentBulletCount = (uint)authoring.BulletCount,
                 });
                 AddComponent(entity, new WeaponVisualFeedback(authoring.VisualFeedback));
                 AddComponent(entity, new WeaponControl());

@@ -53,6 +53,15 @@ namespace OnlineFPS
                     {
                         VFXSparksManager.AddRequest(new VFXSparksRequest
                         {
+                            Position = visualProjectile.StartPoint,
+                            Color = shotVisuals.HitSparksColor,
+                            Size = shotVisuals.HitSparksSize,
+                            Speed = shotVisuals.HitSparksSpeed,
+                            Lifetime = shotVisuals.HitSparksLifetime,
+                        });
+
+                        VFXSparksManager.AddRequest(new VFXSparksRequest
+                        {
                             Position = visualProjectile.EndPoint,
                             Color = shotVisuals.HitSparksColor,
                             Size = shotVisuals.HitSparksSize,
@@ -62,7 +71,17 @@ namespace OnlineFPS
                     }
 
                     shotVisuals.IsInitialized = true;
+
+                    // Instant Hit Logic
+                    if (shotVisuals.InstantHit)
+                    {
+                        localTransform.Position = visualProjectile.EndPoint;
+                        ECB.DestroyEntity(entity);
+                        return;
+                    }
                 }
+
+                if (shotVisuals.InstantHit) return;
 
                 // Speed
                 float3 movedDistance =

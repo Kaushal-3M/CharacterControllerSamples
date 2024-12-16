@@ -51,11 +51,11 @@ MonoBehaviour:
   RespawnTime: 4
   PlayerGhost: {fileID: 577874318210893199, guid: 8c22dcbefac332745a1efbea69cb8bfc, type: 3}
   CharacterGhost: {fileID: 1555240849038293811, guid: e95be3f6ef9cc8243994bdcda968a0e5, type: 3}
-  ForceOnlyFirstWeapon: 0
+  ForceOnlyFirstWeapon: 1
   WeaponGhosts:
+  - {fileID: 9058671491380490423, guid: b57eb5e59fe483041bcc4dee19f60dbc, type: 3}
   - {fileID: 2703708565719520083, guid: 913ac431eeee6b64cae9c18f54d21fb1, type: 3}
   - {fileID: 5179934649230605806, guid: 44cc784d5b8c9594baabe6f315e02449, type: 3}
   - {fileID: 1060756309112113506, guid: c20f40bc8f9814b409807f3e97fc1631, type: 3}
-  - {fileID: 9058671491380490423, guid: b57eb5e59fe483041bcc4dee19f60dbc, type: 3}
   - {fileID: 9058671491380490423, guid: ab2121d5b01c9bf49bce247b036392f9, type: 3}
   SpectatorPrefab: {fileID: 10482797864367398, guid: 6f4378ce200172f42bc501e84a3a7220, type: 3}

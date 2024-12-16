@@ -52,6 +52,7 @@ namespace OnlineFPS
 
             BaseWeaponSimulationJob baseWeaponSimulationJob = new BaseWeaponSimulationJob
             {
+                IsServer = state.WorldUnmanaged.IsServer(),
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 LocalTransformLookup = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 ParentLookup = SystemAPI.GetComponentLookup<Parent>(true),
@@ -89,80 +90,103 @@ namespace OnlineFPS
         [WithAll(typeof(Simulate))]
         public partial struct BaseWeaponSimulationJob : IJobEntity
         {
+            public bool IsServer;
             public float DeltaTime;
             [ReadOnly] public ComponentLookup<LocalTransform> LocalTransformLookup;
             [ReadOnly] public ComponentLookup<Parent> ParentLookup;
             [ReadOnly] public ComponentLookup<PostTransformMatrix> PostTransformMatrixLookup;
 
             void Execute(
-                ref BaseWeapon baseWeapon,
-                ref WeaponControl weaponControl,
-                ref DynamicBuffer<WeaponProjectileEvent> projectileEvents,
-                in WeaponShotSimulationOriginOverride shotSimulationOriginOverride)
+    ref BaseWeapon baseWeapon,
+    ref WeaponControl weaponControl,
+    ref DynamicBuffer<WeaponProjectileEvent> projectileEvents,
+    in WeaponShotSimulationOriginOverride shotSimulationOriginOverride)
             {
                 projectileEvents.Clear();
 
-                uint prevTotalShotsCount = baseWeapon.TotalShotsCount;
+                baseWeapon.PrevTotalShotsCount = baseWeapon.TotalShotsCount;
 
-                // Detect starting to fire
-                if (weaponControl.ShootPressed)
+                // Reload Logic
+                if (baseWeapon.IsReloading)
                 {
+                    if (IsServer)
+                    {
+                        baseWeapon.ReloadTimer -= DeltaTime;
+                        UnityEngine.Debug.Log($"Reloading... Time Remaining: {baseWeapon.ReloadTimer}");
+                        if (baseWeapon.ReloadTimer <= 0f)
+                        {
+                            UnityEngine.Debug.Log("Reload Complete!");
+                            baseWeapon.IsReloading = false;
+                            baseWeapon.CurrentBulletCount = baseWeapon.BulletCount;
+                        }
+                    }
+                    return; // Skip firing logic while reloading
+                }
+
+                // Detect Starting to Fire
+                if (weaponControl.ShootPressed && baseWeapon.CurrentBulletCount > 0)
+                {
+                    UnityEngine.Debug.Log("Shooting Started!");
                     baseWeapon.IsFiring = true;
                 }
 
-                // Handle firing
+                // Handle Firing
                 if (baseWeapon.FiringRate > 0f)
                 {
                     float delayBetweenShots = 1f / baseWeapon.FiringRate;
-
-                    // Clamp shot timer in order to shoot at most the maximum amount of shots that can be shot in one frame based on the firing rate.
-                    // This also prevents needlessly dirtying the timer ghostfield (saves bandwidth).
                     float maxUsefulShotTimer = delayBetweenShots + DeltaTime;
+
                     if (baseWeapon.ShotTimer < maxUsefulShotTimer)
                     {
                         baseWeapon.ShotTimer += DeltaTime;
                     }
 
-                    // This loop is done to allow firing rates that would trigger more than one shot per tick
-                    while (baseWeapon.IsFiring && baseWeapon.ShotTimer > delayBetweenShots)
+                    while (baseWeapon.IsFiring && baseWeapon.ShotTimer > delayBetweenShots && baseWeapon.CurrentBulletCount > 0)
                     {
-                        baseWeapon.TotalShotsCount++;
+                        UnityEngine.Debug.Log("Bullet Fired!");
 
-                        // Consume shoot time
+                        baseWeapon.TotalShotsCount++;
+                        baseWeapon.CurrentBulletCount--;
+
                         baseWeapon.ShotTimer -= delayBetweenShots;
 
-                        // Stop firing after initial shot for non-auto fire
                         if (!baseWeapon.Automatic)
                         {
                             baseWeapon.IsFiring = false;
                         }
+
+                        // Trigger reload if out of bullets
+                        if (baseWeapon.CurrentBulletCount == 0)
+                        {
+                            UnityEngine.Debug.Log("Out of Bullets! Reloading...");
+                            baseWeapon.IsReloading = true;
+                            baseWeapon.ReloadTimer = baseWeapon.ReloadTimeDuration;
+                        }
                     }
                 }
 
-                // Detect stopping fire
+                // Detect Stopping Fire
                 if (!baseWeapon.Automatic || weaponControl.ShootReleased)
                 {
                     baseWeapon.IsFiring = false;
                 }
 
-                uint shotsToFire = baseWeapon.TotalShotsCount - prevTotalShotsCount;
+                uint shotsToFire = baseWeapon.TotalShotsCount - baseWeapon.PrevTotalShotsCount;
                 if (shotsToFire > 0)
                 {
-                    // Find the world transform of the shot start point
                     RigidTransform shotSimulationOrigin = WeaponUtilities.GetShotSimulationOrigin(
                         baseWeapon.ShotOrigin,
                         in shotSimulationOriginOverride,
                         ref LocalTransformLookup,
                         ref ParentLookup,
                         ref PostTransformMatrixLookup);
-                    TransformHelpers.ComputeWorldTransformMatrix(baseWeapon.ShotOrigin, out float4x4 shotVisualsOrigin,
-                        ref LocalTransformLookup, ref ParentLookup, ref PostTransformMatrixLookup);
 
                     for (int i = 0; i < shotsToFire; i++)
                     {
                         for (int j = 0; j < baseWeapon.ProjectilesPerShot; j++)
                         {
                             baseWeapon.TotalProjectilesCount++;
+                            UnityEngine.Debug.Log($"Projectile {baseWeapon.TotalProjectilesCount} Created!");
 
                             Random deterministicRandom = Random.CreateFromIndex(baseWeapon.TotalProjectilesCount);
                             quaternion shotRotationWithSpread =
@@ -175,13 +199,14 @@ namespace OnlineFPS
                                 ID = baseWeapon.TotalProjectilesCount,
                                 SimulationPosition = shotSimulationOrigin.pos,
                                 SimulationDirection = math.mul(shotRotationWithSpread, math.forward()),
-                                VisualPosition = shotVisualsOrigin.Translation(),
                             });
                         }
                     }
                 }
             }
+
         }
+
 
         [BurstCompile]
         [WithAll(typeof(Simulate))]

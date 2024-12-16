@@ -19,5 +19,8 @@ namespace OnlineFPS
 
         public bool IsInitialized;
         public float DistanceTraveled;
+
+        //To Avoid bullet travel
+        public bool InstantHit;
     }
 }
